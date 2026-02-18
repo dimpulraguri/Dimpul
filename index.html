@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hearts Across Miles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --rose-100: #ffe5f1;
+      --rose-300: #ff9ec9;
+      --rose-500: #ff5ca8;
+      --sky-200: #d9f0ff;
+      --sky-400: #88c7ff;
+      --ink: #4a315c;
+      --soft: rgba(255, 255, 255, 0.78);
+      --shadow: 0 16px 36px rgba(104, 60, 109, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Quicksand", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 15% 15%, #fff8ef 0, transparent 36%),
+                  radial-gradient(circle at 85% 20%, #ffdff2 0, transparent 36%),
+                  linear-gradient(145deg, #ffeaf4, var(--sky-200) 48%, #fff2d8);
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      min-height: 100dvh;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.24s ease, visibility 0.24s ease;
+    }
+
+    .scene.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.5;
+      z-index: -1;
+      animation: drift 8s ease-in-out infinite;
+    }
+
+    .blob.a { width: 280px; height: 280px; left: -80px; top: -40px; background: #ffc3df; }
+    .blob.b { width: 360px; height: 360px; right: -120px; bottom: -120px; background: #bfe2ff; animation-delay: 1s; }
+
+    .glass {
+      width: min(1020px, 100%);
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      background: var(--soft);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      padding: clamp(18px, 3vw, 28px);
+      position: relative;
+    }
+
+    .hero-title {
+      margin: 12px 0 8px;
+      text-align: center;
+      font-family: "Baloo 2", "Quicksand", sans-serif;
+      font-size: clamp(32px, 6vw, 62px);
+      line-height: 1.05;
+    }
+
+    .hero-sub {
+      margin: 0;
+      text-align: center;
+      font-size: clamp(16px, 2.6vw, 22px);
+      font-weight: 700;
+      color: #63456f;
+    }
+
+    .heart-bond {
+      margin: 24px auto 20px;
+      width: min(540px, 100%);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .city-heart {
+      border-radius: 18px;
+      padding: 14px 10px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      text-align: center;
+    }
+
+    .heart-icon {
+      display: block;
+      font-size: clamp(34px, 6vw, 56px);
+      line-height: 1;
+      animation: beat 1.2s ease-in-out infinite;
+    }
+
+    .bond-line {
+      width: clamp(64px, 12vw, 140px);
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--rose-300), #ffd8e9 55%, var(--sky-400));
+      box-shadow: 0 0 20px rgba(255, 92, 168, 0.26);
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    .cta {
+      display: block;
+      margin: 0 auto;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 24px;
+      font-family: "Baloo 2", "Quicksand", sans-serif;
+      font-size: clamp(18px, 2.8vw, 24px);
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(135deg, var(--rose-500), #ff8abf);
+      box-shadow: 0 12px 24px rgba(255, 92, 168, 0.35);
+      cursor: pointer;
+    }
+
+    .signoff {
+      margin-top: 10px;
+      text-align: center;
+      font-weight: 700;
+      color: #7d5a8d;
+    }
+
+    .letters-head {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .letters-head h2 {
+      margin: 0;
+      font-family: "Baloo 2", "Quicksand", sans-serif;
+      font-size: clamp(28px, 4.5vw, 42px);
+    }
+
+    .letters-head p {
+      margin: 4px 0 0;
+      font-weight: 700;
+      color: #5f4b71;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .letter-card {
+      border: 0;
+      border-radius: 16px;
+      padding: 12px;
+      background: linear-gradient(155deg, #fff6fb, #f7fbff);
+      box-shadow: 0 8px 18px rgba(76, 42, 102, 0.1);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .letter-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(76, 42, 102, 0.15);
+    }
+
+    .letter-title {
+      margin: 0;
+      font-weight: 700;
+      color: #503762;
+    }
+
+    .letter-rule {
+      margin: 8px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #806592;
+    }
+
+    .top-actions {
+      margin-top: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .ghost-btn, .close-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: #694380;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .game-title {
+      margin: 0;
+      text-align: center;
+      font-family: "Baloo 2", "Quicksand", sans-serif;
+      font-size: clamp(24px, 4vw, 38px);
+    }
+
+    .game-subtitle, .stats {
+      margin: 4px 0 0;
+      text-align: center;
+      font-weight: 700;
+      color: #5b496e;
+    }
+
+    .playfield {
+      margin-top: 10px;
+      min-height: 340px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      background: radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.88), rgba(241, 247, 255, 0.7) 58%);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .fall-heart {
+      position: absolute;
+      top: -34px;
+      user-select: none;
+      cursor: pointer;
+      animation-name: heartDrop;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+    }
+
+    .unlock-panel {
+      min-height: 28px;
+      margin-top: 10px;
+      text-align: center;
+      font-weight: 700;
+      color: #5b496e;
+    }
+
+    .hold-zone {
+      width: min(640px, calc(100% - 20px));
+      margin: 16px auto;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.86);
+      padding: 16px;
+    }
+
+    .hold-pad {
+      height: 86px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255, 92, 168, 0.55);
+      background: rgba(255, 92, 168, 0.08);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      color: #8b4d72;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .meter {
+      margin-top: 10px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(66, 78, 108, 0.16);
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ff7eb8, #ffc46a);
+      transition: width 0.08s linear;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 22, 52, 0.36);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      z-index: 60;
+    }
+
+    .modal.open { display: flex; }
+
+    .letter-box {
+      width: min(840px, 100%);
+      max-height: 86vh;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 20px 38px rgba(85, 52, 95, 0.24);
+      padding: 18px;
+    }
+
+    .letter-box h3 {
+      margin: 0 0 8px;
+      font-family: "Baloo 2", "Quicksand", sans-serif;
+      font-size: clamp(24px, 3.6vw, 34px);
+    }
+
+    .letter-box p {
+      margin: 0;
+      white-space: pre-line;
+      line-height: 1.5;
+      font-weight: 700;
+      color: #563d67;
+    }
+
+    .floating {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.9;
+      animation: floatUp linear forwards;
+    }
+
+    @keyframes beat {
+      0%, 100% { transform: scale(1); }
+      35% { transform: scale(1.15); }
+      60% { transform: scale(1.03); }
+    }
+
+    @keyframes glow {
+      0%, 100% { transform: scaleX(1); filter: brightness(1); }
+      50% { transform: scaleX(1.08); filter: brightness(1.2); }
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-14px) translateX(8px); }
+    }
+
+    @keyframes floatUp {
+      from { transform: translateY(18px) scale(0.8); opacity: 0; }
+      20% { opacity: 0.95; }
+      to { transform: translateY(-130px) scale(1.1); opacity: 0; }
+    }
+
+    @keyframes heartDrop {
+      to { transform: translateY(calc(100% + 420px)); }
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .scene {
+        padding: 10px;
+      }
+
+      .glass {
+        max-height: calc(100dvh - 20px);
+      }
+
+      .grid { grid-template-columns: 1fr; }
+      .playfield { min-height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="scene active" id="scene1">
+    <div class="blob a" aria-hidden="true"></div>
+    <div class="blob b" aria-hidden="true"></div>
+    <div class="glass">
+      <h1 class="hero-title">Two Hearts, One Bond</h1>
+      <p class="hero-sub">Distance means nothing when two hearts are connected.</p>
+
+      <div class="heart-bond" aria-hidden="true">
+        <div class="city-heart">
+          <span class="heart-icon" style="color:#ff5ca8;">&#10084;</span>
+          <strong>India</strong>
+        </div>
+        <div class="bond-line"></div>
+        <div class="city-heart">
+          <span class="heart-icon" style="color:#6cb7ff;">&#10084;</span>
+          <strong>Japan</strong>
+        </div>
+      </div>
+
+      <button class="cta" id="startBtn" type="button">A Gesture To Show My Love</button>
+      <div class="signoff">From your princess (Dimpul)</div>
+    </div>
+  </section>
+
+  <section class="scene" id="scene2">
+    <div class="glass">
+      <div class="letters-head">
+        <h2>Open When Letters</h2>
+        <p>Unlock each one with a small love challenge.</p>
+      </div>
+      <div class="grid" id="letterGrid"></div>
+      <div class="top-actions">
+        <button class="ghost-btn" id="backToScene1" type="button">Back to Opening</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" id="scene3">
+    <div class="glass">
+      <h2 class="game-title" id="gameTitle"></h2>
+      <p class="game-subtitle" id="gameSubtitle"></p>
+      <p class="stats" id="gameStats"></p>
+      <div class="playfield" id="playfield"></div>
+      <div class="unlock-panel" id="gameResult"></div>
+      <div class="top-actions">
+        <button class="ghost-btn" id="backToScene2" type="button">Back to Letters</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal" id="letterModal" aria-hidden="true">
+    <article class="letter-box">
+      <h3 id="modalTitle"></h3>
+      <p id="modalBody"></p>
+      <button class="close-btn" id="closeModal" type="button">Close</button>
+    </article>
+  </div>
+
+  <script>
+    const letters = [
+      {
+        id: "feel-low",
+        emoji: "💙",
+        title: "Open When You Feel Low",
+        mode: "hearts",
+        target: 5,
+        unlockText: "No matter how heavy your heart feels, I'm always here.",
+        content: `If today feels heavier than usual, pause for a second.
+Close your eyes and imagine me sitting next to you.
+
+You are stronger than the thoughts trying to convince you otherwise.
+You have crossed every hard day before this one - and you'll cross this too.
+
+Even from miles away, I am always on your side.
+Not sometimes. Not when it's easy.
+Always.
+
+You don't have to carry everything alone.
+My heart carries you too.`
+      },
+      {
+        id: "happy",
+        emoji: "💛",
+        title: "Open When You're Happy",
+        mode: "hearts",
+        target: 10,
+        unlockText: "I hope your smile never fades. Keep shining.",
+        content: `If you're smiling right now, I hope it's the kind of smile that reaches your eyes.
+
+I wish I was there to see it.
+To tease you.
+To celebrate you.
+
+Your happiness feels like my own victory.
+When you win, I feel proud.
+When you glow, I glow.
+
+Keep choosing joy.
+And save one smile for me.`
+      },
+      {
+        id: "miss-me",
+        emoji: "💞",
+        title: "Open When You Miss Me",
+        mode: "hearts",
+        target: 7,
+        unlockText: "I'm only a call away and always one heartbeat close.",
+        content: `Missing someone just means they matter.
+
+If you are reading this ,it means you're missing me...and honestly I am mising you too.
+
+India and Japan may sit far apart on the map...
+but we have never really been far.
+
+Some connections don't depend on location.
+Ours never did.
+
+I'm only a call away.
+And always one heartbeat close.`
+      },
+      {
+        id: "lonely",
+        emoji: "💓",
+        title: "Open When You Feel Lonely",
+        mode: "hearts",
+        target: 6,
+        unlockText: "Distance can separate places, not hearts.",
+        content: `Even in a crowded room, loneliness can whisper.
+I know that feeling.
+
+But listen carefully - you are not alone.
+
+Somewhere across the sky, there's someone thinking about you daily.
+Wishing you strength.
+Sending silent hugs.
+
+Always remember no matter what I am always by your side.
+
+Distance can separate places.
+It cannot separate hearts that refuse to drift apart.`
+      },
+      {
+        id: "doubt",
+        emoji: "💕",
+        title: "Open When You Doubt Yourself",
+        mode: "hearts",
+        target: 8,
+        unlockText: "You were never meant to be small.",
+        content: `The version of you that doubts herself is not the real you.
+Pavya,
+The real you is brave.
+The real you is capable.
+The real you has survived things you once thought you couldn't.
+
+I see your strength even when you can't.
+
+Never shrink yourself because of fear.
+You were never meant to be small.`
+      },
+      {
+        id: "stressed",
+        emoji: "❤️‍🩹",
+        title: "Open When You're Stressed",
+        mode: "hearts",
+        target: 9,
+        unlockText: "The world can wait. Your peace matters more.",
+        content: `Breathe with me for a moment.
+Slowly in...
+Slowly out...
+
+Not everything needs to be solved today.
+Not everything needs to be perfect.
+
+You are allowed to pause.
+You are allowed to rest.
+
+The world can wait.
+Your peace matters more.`
+      },
+      {
+        id: "smile",
+        emoji: "💗",
+        title: "Open When You Need a Smile",
+        mode: "hearts",
+        target: 4,
+        unlockText: "Now smile, or I'm collecting extra hearts.",
+        content: `Okay listen -
+If you opened this, I officially declare you dramatic.
+
+But it's fine. You're my dramatic.
+
+Remember that time when we laughed for no reason at all?
+Or when we fought and then forgot why we were even mad?
+
+Life with you has always been loud, chaotic, and full of unnecessary arguments.
+
+And I wouldn't trade it for anything.
+
+Now smile.
+Or I'm collecting extra hearts.`
+      },
+      {
+        id: "how-much-love",
+        emoji: "🫀",
+        title: "Open To See How Much I Love You",
+        mode: "hold",
+        target: 5000,
+        unlockText: "Love meter full.",
+        content: `Dearest Pavya,
+If someone asked me what "home" feels like,
+I wouldn't show them a place.
+I would show them you.
+
+I would show them two girls cooking quietly at midnight,
+trying not to make noise,
+whispering and laughing like the world doesn't exist outside that kitchen.
+
+I would show them us under the bedsheet watching movies,
+laughing so hard for absolutely no reason,
+and then getting scolded at home by everyone -
+but still laughing and blaming each other.
+
+I would show them me sitting in the passenger seat like the princess you always call me,
+talking about the reality of life or making fun of people on the road.
+
+I would show them Muruga temple evenings with you -
+calm, peaceful... and the spirituality we share together.
+
+I would show them us bullying Dhushi together,
+teasing Padhu like the perfect team,
+fighting and gossiping with Pinni,
+our secret fast-food hunts with Babai,
+and those emotional storytelling nights with Mom and Dad
+where somehow everything feels safe.
+
+People think love is something big and dramatic.
+
+But for me, love is these small things.
+
+It's the comfort of knowing that no matter how much we fight,
+no matter how much we annoy each other,
+we always come back to each other.
+
+You call me princess.
+
+But you're the one who has always protected me,
+understood me without explanations,
+and stayed even when I was difficult.
+
+I call you "my everything"
+not because it sounds cute,
+but because you truly are.
+
+My laughter feels louder with you.
+My problems feel smaller with you.
+My world feels warmer with you.
+
+India holds our memories.
+Japan holds my present.
+
+But my heart holds you -
+in every time zone.
+
+No distance can reduce what you mean to me.
+No miles can measure it.
+
+If I had to choose again,
+in every lifetime,
+in every version of this world -
+
+I would still choose you
+as my sister,
+as my safe place,
+as my everything.
+
+And that is how much I love you.
+
+yours lovingly
+princess(Dimpul)`
+      }
+    ];
+
+    const sceneEls = {
+      scene1: document.getElementById("scene1"),
+      scene2: document.getElementById("scene2"),
+      scene3: document.getElementById("scene3")
+    };
+
+    const gridEl = document.getElementById("letterGrid");
+    const playfield = document.getElementById("playfield");
+    const gameTitle = document.getElementById("gameTitle");
+    const gameSubtitle = document.getElementById("gameSubtitle");
+    const gameStats = document.getElementById("gameStats");
+    const gameResult = document.getElementById("gameResult");
+    const modal = document.getElementById("letterModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const closeModalBtn = document.getElementById("closeModal");
+
+    let activeLetter = null;
+    let collected = 0;
+    let heartSpawner = null;
+    let holdFrame = null;
+    let holdStart = null;
+    let holding = false;
+
+    function switchScene(targetId) {
+      Object.keys(sceneEls).forEach((id) => {
+        sceneEls[id].classList.toggle("active", id === targetId);
+      });
+    }
+
+    function createGrid() {
+      gridEl.innerHTML = "";
+      letters.forEach((letter) => {
+        const card = document.createElement("button");
+        card.className = "letter-card";
+        card.type = "button";
+        const rule = letter.mode === "hearts"
+          ? `Unlock: collect ${letter.target} hearts`
+          : "Unlock: hold and fill the love meter";
+        card.innerHTML = `<p class="letter-title">${letter.emoji} ${letter.title}</p><p class="letter-rule">${rule}</p>`;
+        card.addEventListener("click", () => startLetter(letter.id));
+        gridEl.appendChild(card);
+      });
+    }
+
+    function clearGame() {
+      if (heartSpawner) {
+        clearInterval(heartSpawner);
+        heartSpawner = null;
+      }
+      if (holdFrame) {
+        cancelAnimationFrame(holdFrame);
+        holdFrame = null;
+      }
+      holdStart = null;
+      holding = false;
+      playfield.innerHTML = "";
+      gameResult.textContent = "";
+      gameStats.textContent = "";
+    }
+
+    function startLetter(letterId) {
+      clearGame();
+      activeLetter = letters.find((x) => x.id === letterId) || null;
+      if (!activeLetter) return;
+
+      switchScene("scene3");
+      gameTitle.textContent = activeLetter.title;
+
+      if (activeLetter.mode === "hearts") {
+        collected = 0;
+        gameSubtitle.textContent = `Collect ${activeLetter.target} hearts to unlock this letter.`;
+        gameStats.textContent = `Hearts: 0 / ${activeLetter.target}`;
+        startHeartMode();
+      } else {
+        gameSubtitle.textContent = "Press and hold to charge the love meter for 5 seconds.";
+        gameStats.textContent = "Love meter: 0%";
+        startHoldMode();
+      }
+    }
+
+    function heartEmojiFor(letter) {
+      if (!letter) return "💖";
+      if (letter.id === "happy") return "💛";
+      if (letter.id === "miss-me") return "💞";
+      if (letter.id === "stressed") return "❤️‍🩹";
+      if (letter.id === "smile") return "💗";
+      if (letter.id === "lonely") return "💓";
+      if (letter.id === "doubt") return "💕";
+      return "💙";
+    }
+
+    function startHeartMode() {
+      const symbol = heartEmojiFor(activeLetter);
+      const spawn = () => {
+        const node = document.createElement("span");
+        node.className = "fall-heart";
+        node.textContent = symbol;
+        const size = 26 + Math.random() * 24;
+        const left = Math.max(2, Math.min(96, Math.random() * 100));
+        const duration = 3.4 + Math.random() * 3.2;
+        node.style.left = `${left}%`;
+        node.style.fontSize = `${size}px`;
+        node.style.animationDuration = `${duration}s`;
+        node.addEventListener("click", () => {
+          node.remove();
+          collected += 1;
+          gameStats.textContent = `Hearts: ${collected} / ${activeLetter.target}`;
+          if (collected >= activeLetter.target) {
+            clearGame();
+            gameResult.textContent = activeLetter.unlockText;
+            showLetter(activeLetter);
+          }
+        });
+        node.addEventListener("animationend", () => node.remove());
+        playfield.appendChild(node);
+      };
+
+      spawn();
+      heartSpawner = setInterval(spawn, 540);
+    }
+
+    function startHoldMode() {
+      const zone = document.createElement("div");
+      zone.className = "hold-zone";
+      zone.innerHTML = `
+        <div class="hold-pad" id="holdPad">Hold Here To Charge Love</div>
+        <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+      `;
+      playfield.appendChild(zone);
+
+      const holdPad = document.getElementById("holdPad");
+      const meterFill = document.getElementById("meterFill");
+      const target = activeLetter.target;
+
+      const updateMeter = () => {
+        if (!holding || holdStart === null) return;
+        const elapsed = Date.now() - holdStart;
+        const pct = Math.max(0, Math.min(100, (elapsed / target) * 100));
+        meterFill.style.width = `${pct}%`;
+        gameStats.textContent = `Love meter: ${Math.floor(pct)}%`;
+        if (elapsed >= target) {
+          holding = false;
+          holdStart = null;
+          gameStats.textContent = "Love meter: 100%";
+          gameResult.textContent = activeLetter.unlockText;
+          showLetter(activeLetter);
+          return;
+        }
+        holdFrame = requestAnimationFrame(updateMeter);
+      };
+
+      const beginHold = () => {
+        if (holding) return;
+        holding = true;
+        holdStart = Date.now();
+        holdFrame = requestAnimationFrame(updateMeter);
+      };
+
+      const endHold = () => {
+        if (!holding) return;
+        holding = false;
+        holdStart = null;
+        if (holdFrame) cancelAnimationFrame(holdFrame);
+        holdFrame = null;
+        meterFill.style.width = "0%";
+        gameStats.textContent = "Love meter: 0%";
+      };
+
+      holdPad.addEventListener("mousedown", beginHold);
+      holdPad.addEventListener("touchstart", beginHold, { passive: true });
+      window.addEventListener("mouseup", endHold);
+      window.addEventListener("touchend", endHold);
+      window.addEventListener("touchcancel", endHold);
+    }
+
+    function showLetter(letter) {
+      modalTitle.textContent = `${letter.emoji} ${letter.title}`;
+      modalBody.textContent = letter.content;
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function hideLetter() {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    function spawnFloaty() {
+      const scene1 = document.getElementById("scene1");
+      if (!scene1.classList.contains("active")) return;
+      const node = document.createElement("span");
+      node.className = "floating";
+      node.textContent = Math.random() > 0.3 ? "♥" : "✨";
+      node.style.left = `${6 + Math.random() * 88}%`;
+      node.style.bottom = `${8 + Math.random() * 20}px`;
+      node.style.fontSize = `${12 + Math.random() * 16}px`;
+      node.style.animationDuration = `${2 + Math.random() * 2.8}s`;
+      node.style.color = Math.random() > 0.5 ? "#ff77b8" : "#79beff";
+      scene1.appendChild(node);
+      setTimeout(() => node.remove(), 5200);
+    }
+
+    document.getElementById("startBtn").addEventListener("click", () => switchScene("scene2"));
+    document.getElementById("backToScene1").addEventListener("click", () => {
+      clearGame();
+      switchScene("scene1");
+    });
+    document.getElementById("backToScene2").addEventListener("click", () => {
+      clearGame();
+      switchScene("scene2");
+    });
+
+    closeModalBtn.addEventListener("click", hideLetter);
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) hideLetter();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && modal.classList.contains("open")) hideLetter();
+    });
+
+    createGrid();
+    setInterval(spawnFloaty, 260);
+  </script>
+</body>
+</html>
